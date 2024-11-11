@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import mongoose from 'mongoose';
 import authUser from './modules/authUsers/router';
+import bodyParser from 'body-parser';
 
 const Port = process.env.PORT || 2000;
 
@@ -24,6 +25,16 @@ mongoose
 app.use(cors());
 app.use(express.json());
 // app.use(bodyParder())
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+
+// Root route
+app.get('/', (req, res) => {
+  res.send('Welcome to the API');
+});
 
 // routes
 app.use('/api', authUser);
@@ -31,3 +42,5 @@ app.use('/api', authUser);
 // app.listen(Port, () => {
 //   console.log('connected');
 // });
+
+export default app;
