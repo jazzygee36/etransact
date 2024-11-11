@@ -7,6 +7,13 @@ import nodemailer from 'nodemailer';
 const JWT_SECRET = process.env.JWT_SECRET;
 
 export const handleUserResgistration = async (req: Request, res: Response) => {
+  // Disable CORS for this specific route
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow any origin
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE, OPTIONS'
+  );
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   const { username, email, phoneNumber, password } = req.body;
   if (!username || !email || !phoneNumber || !password) {
     return res.status(401).json({ message: 'all input fields required' });
