@@ -116,3 +116,84 @@ export const loginUser = async (req: Request, res: Response) => {
     return res.status(500).json({ message: error });
   }
 };
+
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Set up email transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER, // your SMTP username
+        pass: process.env.EMAIL_PASS, // your SMTP password
+      },
+    });
+    // // Generate password reset token
+    // const token = jwt.sign({ id: user.id }, JWT_SECRET as string, {
+    //   expiresIn: '1h', // token expires in 1 hour
+    // });
+
+    // Create reset password link
+    const resetLink = `https://e-recharge.netlify.app/reset-password`;
+    // `https://etransact.vercel.app/api/reset-password/${token}`;
+
+    // Send reset email
+    await transporter.sendMail({
+      to: email,
+      subject: 'e-Recharge, Reset Your Password',
+      html: `<p>Click the link below to reset your password:</p>
+             <p><a href="${resetLink}">Reset Password</a></p>`,
+    });
+
+    return res.status(200).json({ message: 'Password reset email sent' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: 'Token and new password are required' });
+  }
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, JWT_SECRET as string) as { id: string };
+    const user = await User.findOne({ id: decoded.id });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
