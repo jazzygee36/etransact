@@ -87,3 +87,14 @@ export const verifyEmail = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const user = [{ name: 'sams' }];
+    // const users = await User.findAll();
+
+    return res.status(200).json({ message: user });
+  } catch {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};

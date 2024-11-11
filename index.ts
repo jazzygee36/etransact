@@ -44,8 +44,4 @@ app.get('/', (req, res) => {
 // routes
 app.use('/api', authUser);
 
-// app.listen(Port, () => {
-//   console.log('connected');
-// });
-
 export default app;
