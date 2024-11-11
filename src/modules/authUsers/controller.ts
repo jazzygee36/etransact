@@ -44,7 +44,7 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
     });
 
     // Create verification link
-    const verificationLink = `http://localhost:8000/api/verify-email/${token}`;
+    const verificationLink = `https://etransact.vercel.app/api/verify-email/${token}`;
 
     // Send verification email
     await transporter.sendMail({
@@ -65,7 +65,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET as string) as { id: string };
-    const user = await User.findOne({ where: { id: decoded.id } });
+    const user = await User.findOne({ id: decoded.id });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -88,13 +88,31 @@ export const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllUsers = async (req: Request, res: Response) => {
-  try {
-    const user = [{ name: 'sams' }];
-    // const users = await User.findAll();
+export const loginUser = async (req: Request, res: Response) => {
+  const { username, password } = req.body;
 
-    return res.status(200).json({ message: user });
-  } catch {
-    return res.status(500).json({ message: 'Internal server error' });
+  if (!username || !password) {
+    return res.status(401).json({ message: 'username & password is required' });
+  }
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).json({ message: 'username not found' });
+    }
+    const comparePwd = await bcrypt.compare(password, user.password);
+
+    if (!comparePwd) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+
+    // Generate a JWT token
+    const token = jwt.sign(
+      { id: user.id, username: user.username }, // Payload
+      JWT_SECRET as string, // Secret key from your environment variables
+      { expiresIn: '1h' } // Token expiration time
+    );
+    return res.status(200).json({ message: 'login successful', token });
+  } catch (error) {
+    return res.status(500).json({ message: error });
   }
 };
