@@ -6,6 +6,7 @@ interface IUser extends Document {
   password: string;
   phoneNumber: string;
   id?: number;
+  isVerified: boolean;
 }
 
 interface IUserModel extends Model<IUser> {
@@ -18,6 +19,7 @@ const userSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phoneNumber: { type: String, required: true },
+  isVerified: { type: Boolean, required: true },
 });
 
 userSchema.statics.findAll = function () {

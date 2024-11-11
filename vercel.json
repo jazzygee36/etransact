@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.ts"
+    }
+  ],
+  "env": {
+    "MONGODB_URI": "mongodb+srv://jazzygee36:OnkPWewIfVNj86uF@cluster0.6thlp.mongodb.net/",
+    "PORT": "9000"
+  }
+}

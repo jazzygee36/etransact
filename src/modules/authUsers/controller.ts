@@ -26,6 +26,7 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
     const user = await User.create({
       ...req.body,
       password: hashedPassword,
+      isVerified: false, // Track verification status
     });
 
     // Generate verification token
@@ -56,5 +57,33 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
     return res.status(200).json({ message: `Registered successful` });
   } catch (error) {
     return res.status(500).json({ message: error });
+  }
+};
+
+export const verifyEmail = async (req: Request, res: Response) => {
+  const { token } = req.params;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET as string) as { id: string };
+    const user = await User.findOne({ where: { id: decoded.id } });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.redirect('https://e-recharge.netlify/login'); // Redirect to login page
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    return res.redirect('https://e-recharge.netlify.app/dashboard'); // Redirect to welcome page
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
