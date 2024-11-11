@@ -3,11 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "watch": [
-    "src"
-  ],
   "scripts": {
-    "dev": "nodemon src/index.ts"
+    "dev": "nodemon index.ts"
   },
   "keywords": [],
   "author": "",
