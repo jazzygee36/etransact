@@ -1,7 +1,7 @@
 import express from 'express';
 const app = express();
-// import cors from 'cors';
-
+import cors from 'cors';
+// import body-parser from 'bodyParser'
 import dotenv from 'dotenv';
 dotenv.config();
 import mongoose from 'mongoose';
@@ -22,7 +22,12 @@ mongoose
   });
 
 // middleware
-// app.use(cors());
+app.use(
+  cors({
+    origin: 'http://localhost:3000', // Adjust based on where your frontend is hosted
+  })
+);
+
 app.use(express.json());
 // app.use(bodyParder())
 app.use(
