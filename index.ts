@@ -24,7 +24,7 @@ mongoose
 // middleware
 app.use(
   cors({
-    origin: 'http://localhost:3000', // Adjust based on where your frontend is hosted
+    origin: 'http://localhost:3000',
   })
 );
 

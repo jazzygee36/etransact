@@ -22,7 +22,12 @@ mongoose
   });
 
 // middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+  })
+);
+
 app.use(express.json());
 // app.use(bodyParder())
 app.use(
@@ -38,9 +43,5 @@ app.get('/', (req, res) => {
 
 // routes
 app.use('/api', authUser);
-
-// app.listen(Port, () => {
-//   console.log('connected');
-// });
 
 export default app;
