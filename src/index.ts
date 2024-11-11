@@ -5,7 +5,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
 import mongoose from 'mongoose';
-import authUser from './src/modules/authUsers/router';
+import authUser from './modules/authUsers/router';
 
 const Port = process.env.PORT || 2000;
 
