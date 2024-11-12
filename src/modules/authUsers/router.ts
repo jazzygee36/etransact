@@ -18,9 +18,6 @@ router.post(
   '/request-password-reset',
   requestPasswordReset as unknown as RequestHandler
 );
-router.get(
-  '/reset-password/:token',
-  resetPassword as unknown as RequestHandler
-);
+router.post('/reset-password/', resetPassword as unknown as RequestHandler);
 
 export default router;

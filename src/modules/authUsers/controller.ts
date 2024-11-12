@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import User from '../../model/user.schemal';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 
 const JWT_SECRET = process.env.JWT_SECRET;
+interface CustomJwtPayload extends JwtPayload {
+  id: string;
+}
 
 export const handleUserResgistration = async (req: Request, res: Response) => {
   const { username, email, phoneNumber, password } = req.body;
@@ -166,34 +169,30 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
   const { token, newPassword } = req.body;
 
-  if (!token || !newPassword) {
-    return res
-      .status(400)
-      .json({ message: 'Token and new password are required' });
-  }
-
   try {
     // Verify the token
-    const decoded = jwt.verify(token, JWT_SECRET as string) as { id: string };
-    const user = await User.findOne({ id: decoded.id });
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET as any
+    ) as CustomJwtPayload;
+    const userId = decoded.id;
 
+    // Find the user by ID
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'User not found.' });
     }
 
     // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update the user's password
+    // Update user's password in the database
     user.password = hashedPassword;
     await user.save();
 
-    return res.status(200).json({ message: 'Password reset successful' });
+    res.status(200).json({ message: 'Password updated successfully.' });
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: 'Invalid or expired token' });
-    }
-    console.error(error);
-    return res.status(500).json({ message: 'Internal server error' });
+    res.status(400).json({ message: 'Invalid or expired token.' });
   }
 };
