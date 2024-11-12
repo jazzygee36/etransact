@@ -2,14 +2,21 @@ import axios from 'axios';
 import { Request, Response } from 'express';
 import Payment from '../../model/payment.schemal';
 
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+
 export const verifyPayment = async (req: Request, res: Response) => {
   const { reference } = req.body;
+  if (!reference) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'Reference is required' });
+  }
   try {
     const response = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
         },
       }
     );
