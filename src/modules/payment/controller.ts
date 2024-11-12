@@ -21,6 +21,8 @@ export const verifyPayment = async (req: Request, res: Response) => {
       }
     );
 
+    console.log('Paystack Response:', response.data);
+
     // Check if Paystack's response confirms a successful payment
     if (response.data.status === 'success') {
       // Payment is successful
