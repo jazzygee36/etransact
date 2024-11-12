@@ -1,5 +1,17 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import Profile from '../../model/profile.shemal';
+import jwt from 'jsonwebtoken'
+
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: string;
+      };
+    }
+  }
+}
 
 // Create a new profile
 export const createProfile = async (req: Request, res: Response) => {
@@ -39,26 +51,39 @@ export const createProfile = async (req: Request, res: Response) => {
   }
 };
 
-// Get a profile by userId
+
+export const authenticateUser = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Assumes 'Bearer <token>'
+
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
+    req.user = { userId: decoded.userId };
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
 export const getProfile = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+  const userId = req.user?.userId; 
 
   try {
     const profile = await Profile.findOne({ userId });
 
     if (!profile) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Profile not found' });
+      return res.status(404).json({ success: false, message: 'Profile not found' });
     }
 
     return res.status(200).json({ success: true, profile });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: 'Error fetching profile' });
+    return res.status(500).json({ success: false, message: 'Error fetching profile' });
   }
 };
+
 
 // Update a profile by userId
 export const updateProfile = async (req: Request, res: Response) => {
