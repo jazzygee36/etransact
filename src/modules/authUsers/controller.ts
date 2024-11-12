@@ -3,6 +3,7 @@ import User from '../../model/user.schemal';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import Profile from '../../model/profile.shemal';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 interface CustomJwtPayload extends JwtPayload {
@@ -31,6 +32,13 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
       password: hashedPassword,
       isVerified: false, // Track verification status
     });
+
+    // Create a profile for the user
+    const newProfile = new Profile({
+      ...req.body,
+    });
+
+    await newProfile.save();
 
     // Generate verification token
     const token = jwt.sign({ id: user.id }, JWT_SECRET as string, {

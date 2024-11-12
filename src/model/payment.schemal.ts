@@ -5,6 +5,7 @@ interface IPayment extends Document {
   paymentDate: string;
   transactionReference: string;
   status: string;
+  channel: string;
 }
 
 interface IPaymentModel extends Model<IPayment> {
@@ -16,6 +17,7 @@ const paymentSchema = new Schema<IPayment>({
   paymentDate: { type: String, required: true },
   transactionReference: { type: String, required: true, unique: true },
   status: { type: String, required: true },
+  channel: { type: String, required: true },
 });
 
 paymentSchema.statics.findAll = function () {

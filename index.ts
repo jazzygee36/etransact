@@ -7,6 +7,7 @@ dotenv.config();
 import mongoose from 'mongoose';
 import authUser from './src/modules/authUsers/router';
 import payment from './src/modules/payment/router';
+import profile from './src/modules/profile/router';
 import bodyParser from 'body-parser';
 
 const Port = process.env.PORT || 2000;
@@ -41,6 +42,7 @@ app.get('/', (req, res) => {
 // routes
 app.use('/api', authUser);
 app.use('/api', payment);
+app.use('/api', profile);
 
 // app.listen(Port, () => {
 //   console.log(`working ${Port}`);

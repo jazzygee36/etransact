@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Request, Response } from 'express';
 import Payment from '../../model/payment.schemal';
+import Profile from '../../model/profile.shemal';
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string;
 
@@ -21,22 +22,36 @@ export const verifyPayment = async (req: Request, res: Response) => {
       }
     );
 
-    console.log('Paystack Response:', response.data);
-
     // Check if Paystack's response confirms a successful payment
-    if (response.data.status === 'success') {
+    if (response.data.status === true) {
       // Payment is successful
       const paymentDetails = response.data.data;
 
       // You can now store payment details (e.g., user, amount, date, etc.) in your database
       // Example:
       const paymentRecord = await Payment.create({
-        // userId: paymentDetails.customer.id, // Assuming you have a user ID
         amount: paymentDetails.amount,
         paymentDate: paymentDetails.paid_at,
         transactionReference: paymentDetails.reference,
+        channel: paymentDetails.channel,
         status: 'successful',
       });
+      // Optionally, update the user's profile with payment details (if needed)
+      const userProfile = await Profile.findOne({
+        transactionReference: paymentDetails.transactionReference,
+      });
+
+      if (userProfile) {
+        userProfile.payments.push({
+          transactionReference: paymentDetails.reference,
+          amount: paymentDetails.amount,
+          paymentDate: paymentDetails.paid_at,
+          status: paymentDetails.status,
+          channel: paymentDetails.channel,
+        });
+
+        await userProfile.save();
+      }
 
       return res
         .status(200)
