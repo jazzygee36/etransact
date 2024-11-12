@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Request, Response } from 'express';
 import Payment from '../../model/payment.schemal';
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string;
 
 export const verifyPayment = async (req: Request, res: Response) => {
   const { reference } = req.body;
