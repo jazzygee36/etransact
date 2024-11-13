@@ -5,7 +5,7 @@ interface IUser extends Document {
   email: string;
   password: string;
   phoneNumber: string;
-  id?: number;
+  
   isVerified: boolean;
 }
 
@@ -14,7 +14,7 @@ interface IUserModel extends Model<IUser> {
 }
 
 const userSchema = new Schema<IUser>({
-  id: { type: Number },
+  
   username: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },

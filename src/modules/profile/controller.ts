@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Profile from '../../model/profile.shemal';
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose';
 
 
 declare global {
@@ -68,73 +69,24 @@ export const authenticateUser = (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const getProfile = async (req: Request, res: Response) => {
-  const userId = req.user?.userId; 
-
-  try {
-    const profile = await Profile.findOne({ userId });
-
-    if (!profile) {
-      return res.status(404).json({ success: false, message: 'Profile not found' });
-    }
-
-    return res.status(200).json({ success: true, profile });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: 'Error fetching profile' });
-  }
-};
-
-
-// Update a profile by userId
-export const updateProfile = async (req: Request, res: Response) => {
-  const { userId } = req.params;
-  const { firstName, lastName, email, avatarUrl, bio, phoneNumber } = req.body;
-
-  try {
-    const updatedProfile = await Profile.findOneAndUpdate(
-      { userId },
-      { firstName, lastName, email, avatarUrl, bio, phoneNumber },
-      { new: true } // Return the updated document
-    );
-
-    if (!updatedProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Profile not found' });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Profile updated successfully',
-      profile: updatedProfile,
-    });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: 'Error updating profile' });
-  }
-};
-
-// Delete a profile by userId
-export const deleteProfile = async (req: Request, res: Response) => {
+export const getUserProfile = async (req: Request, res: Response) => {
   const { userId } = req.params;
 
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: 'Invalid userId format' });
+  }
+  
   try {
-    const deletedProfile = await Profile.findOneAndDelete({ userId });
+    // Find the user by userId
+    const user = await Profile.findById(userId); // Exclude password field
 
-    if (!deletedProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Profile not found' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: 'Profile deleted successfully' });
+    res.status(200).json(user);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error deleting profile',
-    });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
