@@ -35,7 +35,7 @@ const profileSchema: Schema = new Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      // required: true,
+      required: true,
     },
     username: { type: String, required: true },
     phoneNumber: { type: String, required: true },

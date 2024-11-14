@@ -3,7 +3,7 @@ import User from '../../model/user.schemal';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-import Profile from '../../model/profile.shemal';
+import Profile, { IProfile } from '../../model/profile.shemal';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 interface CustomJwtPayload extends JwtPayload {
@@ -36,6 +36,7 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
     // Create a profile for the user
     const newProfile = new Profile({
       ...req.body,
+      userId: user.id,
     });
 
     await newProfile.save();
@@ -98,36 +99,49 @@ export const verifyEmail = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 export const loginUser = async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
+  // Check if username and password are provided
   if (!username || !password) {
-    return res.status(401).json({ message: 'username & password is required' });
+    return res
+      .status(401)
+      .json({ message: 'Username and password are required' });
   }
+
   try {
     const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(401).json({ message: 'username not found' });
-    }
-    const comparePwd = await bcrypt.compare(password, user.password);
 
+    if (!user) {
+      return res.status(401).json({ message: 'Username not found' });
+    }
+
+    // Compare the provided password with the stored password
+    const comparePwd = await bcrypt.compare(password, user.password);
     if (!comparePwd) {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    // Generate a JWT token
+    // Generate a JWT token with the user profile ID in the payload
     const token = jwt.sign(
-      { id: user.id, username: user.username }, // Payload
-      JWT_SECRET as string, // Secret key from your environment variables
+      {
+        username: user.username,
+        userId: user.id,
+      },
+      process.env.JWT_SECRET as string, // Use the JWT secret from environment variables
       { expiresIn: '1h' } // Token expiration time
     );
-    return res.status(200).json({ message: 'login successful', token });
+
+    // Return response with the user profile and token
+    return res.status(200).json({
+      message: 'Login successful',
+      token,
+    });
   } catch (error) {
+    // Handle errors
     return res.status(500).json({ message: error });
   }
 };
-
 export const requestPasswordReset = async (req: Request, res: Response) => {
   const { email } = req.body;
 

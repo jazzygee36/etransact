@@ -1,92 +1,52 @@
 import { Request, Response, NextFunction } from 'express';
-import Profile from '../../model/profile.shemal';
-import jwt from 'jsonwebtoken'
-import mongoose from 'mongoose';
+import Profile, { IProfile } from '../../model/profile.shemal';
+import jwt from 'jsonwebtoken';
+import User from '../../model/user.schemal';
+import { IUser } from '../../model/user.schemal';
 
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-      };
-    }
+declare module 'express' {
+  export interface Request {
+    userId?: string; // Add userId as an optional property
   }
 }
 
-// Create a new profile
-export const createProfile = async (req: Request, res: Response) => {
-  const {
-    username,
-    phoneNumber,
-    email,
-    amount,
-    paymentDate,
-    transactionReference,
-    status,
-    channel,
-  } = req.body;
+type PopulatedUser = IUser & { profile: IProfile };
+
+export const authenticateToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) return res.sendStatus(401);
 
   try {
-    const profile = new Profile({
-      username,
-      phoneNumber,
-      email,
-      amount,
-      paymentDate,
-      transactionReference,
-      status,
-      channel,
-    });
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || '');
 
-    await profile.save();
-    return res.status(201).json({
-      success: true,
-      message: 'Profile created successfully',
-      profile,
-    });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: 'Error creating profile' });
+    console.table(decoded);
+    if (decoded?.userId) {
+      req.userId = decoded?.userId;
+      next();
+    } else {
+      return res.sendStatus(403);
+    }
+  } catch (err) {
+    return res.sendStatus(403);
   }
 };
-
-
-export const authenticateUser = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(' ')[1]; // Assumes 'Bearer <token>'
-
-  if (!token) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
-    req.user = { userId: decoded.userId };
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-};
-
 export const getUserProfile = async (req: Request, res: Response) => {
-  const { userId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: 'Invalid userId format' });
-  }
-  
   try {
-    // Find the user by userId
-    const user = await Profile.findById(userId); // Exclude password field
+    const userId = req.userId;
+    const profile = await Profile.findOne({ userId });
 
-    if (!user) {
+    if (!profile) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json(user);
+    res.json({ profile });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
