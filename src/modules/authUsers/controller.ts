@@ -92,7 +92,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
 
     // Check if the user is already verified
     if (user.isVerified) {
-      return res.redirect('https://e-recharge.netlify/login'); // Redirect if already verified
+      return res.redirect('https://e-recharge.netlify.app/login'); // Redirect if already verified
     }
 
     // Mark the user as verified and save
@@ -100,7 +100,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await user.save();
 
     // Redirect to the dashboard after successful verification
-    return res.redirect('https://e-recharge.netlify/login');
+    return res.redirect('https://e-recharge.netlify.app/login');
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ message: 'Token expired' });
