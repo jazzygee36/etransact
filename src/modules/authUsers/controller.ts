@@ -57,7 +57,7 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
       },
     });
 
-    const verificationLink = `https://etransact.vercel.app/api/verify-email/${token}`;
+    const verificationLink = `https://e-recharge.netlify.app/api/verify-email/${token}`;
     await transporter.sendMail({
       to: email,
       subject: `e-Recharge Verify Your Email Address`,
