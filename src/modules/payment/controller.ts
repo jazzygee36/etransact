@@ -17,7 +17,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+          Authorization: `Bearer sk_test_5db48005ee13caea412e0703440e21939aa133d3`,
         },
       }
     );

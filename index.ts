@@ -44,8 +44,8 @@ app.use('/api', authUser);
 app.use('/api', payment);
 app.use('/api', profile);
 
-// app.listen(Port, () => {
-//   console.log(`working ${Port}`);
-// });
+app.listen(Port, () => {
+  console.log(`working ${Port}`);
+});
 
 export default app;
