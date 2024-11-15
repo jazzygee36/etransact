@@ -10,11 +10,16 @@ const JWT_SECRET = process.env.JWT_SECRET;
 interface CustomJwtPayload extends JwtPayload {
   id: string;
 }
+
 export const handleUserResgistration = async (req: Request, res: Response) => {
   const { username, email, phoneNumber, password } = req.body;
+
   if (!username || !email || !phoneNumber || !password) {
-    return res.status(401).json({ message: 'All input fields required' });
+    return res.status(401).json({ message: 'All input fields are required' });
   }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
     const existEmail = await User.findOne({ email });
@@ -29,25 +34,36 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await User.create({
-      username,
-      email,
-      phoneNumber,
-      password: hashedPassword,
-      isVerified: false,
-    });
+    const user = await User.create(
+      [
+        {
+          username,
+          email,
+          phoneNumber,
+          password: hashedPassword,
+          isVerified: false,
+        },
+      ],
+      { session }
+    );
 
-    const newProfile = new Profile({
-      userId: user._id,
-      username,
-      phoneNumber,
-      email,
-    });
-    await newProfile.save();
+    if (email) {
+      const newProfile = new Profile({
+        userId: user[0]._id,
+        username,
+        phoneNumber,
+        email,
+      });
+      await newProfile.save({ session });
+    }
 
-    const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET as string, {
-      expiresIn: '1h',
-    });
+    const token = jwt.sign(
+      { id: user[0]._id.toString() },
+      JWT_SECRET as string,
+      {
+        expiresIn: '1h',
+      }
+    );
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -65,14 +81,23 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
              <p><a href="${verificationLink}">Verify Email</a></p>`,
     });
 
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
     return res.status(200).json({ message: 'Registration successful' });
   } catch (error) {
+    // Rollback the transaction if any error occurs
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error('Error during registration:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 export const verifyEmail = async (req: Request, res: Response) => {
   const { token } = req.params;
-  console.log('Token from request params:', token); // Log token
 
   try {
     // Verify and decode the token

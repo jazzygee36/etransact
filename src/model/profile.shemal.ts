@@ -2,11 +2,10 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 // Define the interface for the profile data
 export interface IProfile extends Document {
-  
   userId: mongoose.Schema.Types.ObjectId; // Reference to the user document
   username: string;
   phoneNumber: string;
-  email: string;
+  email?: string; // Optional email field
   payments: Array<{
     transactionReference: string;
     amount: number;
@@ -31,18 +30,21 @@ const paymentSchema = new Schema(
 );
 
 // Define the Profile schema
-const profileSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  payments: [
-    {
-      transactionReference: String,
-      amount: Number,
-      paymentDate: Date,
-      status: String,
-      channel: String,
+const profileSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
-  ],
-});
+    username: { type: String, required: true },
+    phoneNumber: { type: String, required: true },
+    email: { type: String, unique: true, sparse: true }, // Optional but must be unique if provided
+    payments: [paymentSchema], // Use the defined payment schema
+  },
+  { timestamps: true } // Automatically create updatedAt and createdAt fields
+);
+
 // Create and export the Profile model
 const Profile = mongoose.model<IProfile>('Profile', profileSchema);
 export default Profile;
