@@ -39,7 +39,9 @@ export const authenticateToken = (
 export const getUserProfile = async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
-    const profile = await Profile.findOne({ userId });
+    const profile = await Profile.findOne({ userId })
+      .populate('userId', 'username email phoneNumber') // Populating user fields (adjust as needed)
+      .exec(); // Execute the query to get the populated data
 
     if (!profile) {
       return res.status(404).json({ message: 'User not found' });

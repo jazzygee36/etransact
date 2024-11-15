@@ -41,6 +41,7 @@ export const handleUserResgistration = async (req: Request, res: Response) => {
       userId: user._id,
       username,
       phoneNumber,
+      email,
     });
     await newProfile.save();
 
@@ -99,7 +100,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await user.save();
 
     // Redirect to the dashboard after successful verification
-    return res.redirect('https://e-recharge.netlify.app/dashboard');
+    return res.redirect('https://e-recharge.netlify/login');
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ message: 'Token expired' });
