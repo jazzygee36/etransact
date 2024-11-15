@@ -30,29 +30,13 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
       // You can now store payment details (e.g., user, amount, date, etc.) in your database
       // Example:
-      const paymentRecord = await Payment.create({
+      await Payment.create({
         amount: paymentDetails.amount,
         paymentDate: paymentDetails.paid_at,
         transactionReference: paymentDetails.reference,
         channel: paymentDetails.channel,
         status: 'successful',
       });
-      // Optionally, update the user's profile with payment details (if needed)
-      const userProfile = await Profile.findOne({
-        transactionReference: paymentDetails.transactionReference,
-      });
-
-      if (userProfile) {
-        userProfile.payments.push({
-          transactionReference: paymentDetails.reference,
-          amount: paymentDetails.amount,
-          paymentDate: paymentDetails.paid_at,
-          status: paymentDetails.status,
-          channel: paymentDetails.channel,
-        });
-
-        await userProfile.save();
-      }
 
       return res
         .status(200)
