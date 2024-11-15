@@ -7,7 +7,7 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string;
 
 export const verifyPayment = async (req: Request, res: Response) => {
   const { reference, userId } = req.body;
-  if (!reference || userId) {
+  if (!reference || !userId) {
     return res
       .status(400)
       .json({ success: false, message: 'Reference is required' });
@@ -21,7 +21,6 @@ export const verifyPayment = async (req: Request, res: Response) => {
         },
       }
     );
-    console.log(response.data, 'resss');
 
     // Check if Paystack's response confirms a successful payment
     if (response.data.status === true) {
