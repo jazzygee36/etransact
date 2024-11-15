@@ -4,101 +4,114 @@ import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import Profile, { IProfile } from '../../model/profile.shemal';
+import mongoose from 'mongoose';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 interface CustomJwtPayload extends JwtPayload {
   id: string;
 }
-
 export const handleUserResgistration = async (req: Request, res: Response) => {
   const { username, email, phoneNumber, password } = req.body;
   if (!username || !email || !phoneNumber || !password) {
-    return res.status(401).json({ message: 'all input fields required' });
-  }
-  const existEmail = await User.findOne({ email });
-  if (existEmail) {
-    return res.status(401).json({ message: 'email already exist' });
+    return res.status(401).json({ message: 'All input fields required' });
   }
 
-  const existPhoneNumber = await User.findOne({ phoneNumber });
-  if (existPhoneNumber) {
-    return res.status(401).json({ message: 'phone number already exist' });
-  }
   try {
+    const existEmail = await User.findOne({ email });
+    if (existEmail) {
+      return res.status(401).json({ message: 'Email already exists' });
+    }
+
+    const existPhoneNumber = await User.findOne({ phoneNumber });
+    if (existPhoneNumber) {
+      return res.status(401).json({ message: 'Phone number already exists' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      ...req.body,
+      username,
+      email,
+      phoneNumber,
       password: hashedPassword,
-      isVerified: false, // Track verification status
+      isVerified: false,
     });
 
-    // Create a profile for the user
     const newProfile = new Profile({
-      ...req.body,
-      userId: user.id,
+      userId: user._id,
+      username,
+      phoneNumber,
     });
-
     await newProfile.save();
 
-    // Generate verification token
-    const token = jwt.sign({ id: user.id }, JWT_SECRET as string, {
-      expiresIn: '1h', // Consider increasing if needed
+    const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET as string, {
+      expiresIn: '1h',
     });
 
-    // Set up email transporter
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER, // your SMTP username
-        pass: process.env.EMAIL_PASS, // your SMTP password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
-    // Create verification link
     const verificationLink = `https://etransact.vercel.app/api/verify-email/${token}`;
-
-    // Send verification email
     await transporter.sendMail({
       to: email,
       subject: `e-Recharge Verify Your Email Address`,
       html: `<p>Welcome to eRecharge, ${username}! Please verify your email by clicking the link below:</p>
-               <p><a href="${verificationLink}">Verify Email</a></p>`,
+             <p><a href="${verificationLink}">Verify Email</a></p>`,
     });
 
-    return res.status(200).json({ message: `Registered successful` });
+    return res.status(200).json({ message: 'Registration successful' });
   } catch (error) {
-    return res.status(500).json({ message: error });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 export const verifyEmail = async (req: Request, res: Response) => {
   const { token } = req.params;
+  console.log('Token from request params:', token); // Log token
 
   try {
+    // Verify and decode the token
     const decoded = jwt.verify(token, JWT_SECRET as string) as { id: string };
-    const user = await User.findOne({ id: decoded.id });
+
+    // Check if the ID is valid
+    if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    // Find the user by ID
+    const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Check if the user is already verified
     if (user.isVerified) {
-      return res.redirect('https://e-recharge.netlify/login'); // Redirect to login page
+      return res.redirect('https://e-recharge.netlify/login'); // Redirect if already verified
     }
 
+    // Mark the user as verified and save
     user.isVerified = true;
     await user.save();
 
-    return res.redirect('https://e-recharge.netlify.app/dashboard'); // Redirect to welcome page
+    // Redirect to the dashboard after successful verification
+    return res.redirect('https://e-recharge.netlify.app/dashboard');
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: 'Invalid or expired token' });
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: 'Token expired' });
     }
-    console.error(error);
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: 'Invalid or malformed token' });
+    }
+    console.error('Error verifying email:', error); // More detailed error logging
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 export const loginUser = async (req: Request, res: Response) => {
   const { username, password } = req.body;
 

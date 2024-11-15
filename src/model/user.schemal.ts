@@ -2,6 +2,8 @@ import mongoose, { Schema, Model, Document } from 'mongoose';
 import { IProfile } from './profile.shemal';
 
 export interface IUser extends Document {
+  // _id: string;
+  _id: mongoose.Types.ObjectId; // Explicitly define the type of _id
   username: string;
   email: string;
   password: string;
