@@ -6,8 +6,8 @@ import Profile from '../../model/profile.shemal';
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY as string;
 
 export const verifyPayment = async (req: Request, res: Response) => {
-  const { reference } = req.body;
-  if (!reference) {
+  const { reference, userId } = req.body;
+  if (!reference || userId) {
     return res
       .status(400)
       .json({ success: false, message: 'Reference is required' });
@@ -31,12 +31,28 @@ export const verifyPayment = async (req: Request, res: Response) => {
       // You can now store payment details (e.g., user, amount, date, etc.) in your database
       // Example:
       await Payment.create({
+        userId,
         amount: paymentDetails.amount,
         paymentDate: paymentDetails.paid_at,
         transactionReference: paymentDetails.reference,
         channel: paymentDetails.channel,
         status: 'successful',
       });
+
+      // Update the user's profile with payment details
+      const userProfile = await Profile.findOne({ userId });
+
+      if (userProfile) {
+        userProfile.payments.push({
+          transactionReference: paymentDetails.reference,
+          amount: paymentDetails.amount,
+          paymentDate: paymentDetails.paid_at,
+          status: 'successful',
+          channel: paymentDetails.channel,
+        });
+
+        await userProfile.save();
+      }
 
       return res
         .status(200)
